@@ -19,7 +19,7 @@ menu "toolbar:test", "test"
 menu_item "toolbar:test > start", "start", { start_capture }
 //menu_item "toolbar:test > check", "check", { test_check }
 menu_item "toolbar:test > stop", "stop", { stop_capture }
-menu_item "toolbar:test > play", "play", { start_client "192.168.40.62"}
+menu_item "toolbar:test > play", "play", { start_client }
 //menu_item "toolbar:test > save", "save", { test_save }
 //menu_item "toolbar:test > reset", "reset", { test_reset }
 }

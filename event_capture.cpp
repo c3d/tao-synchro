@@ -4,9 +4,9 @@
 //
 //   File Description:
 //
-//     Event capture and replay management.
-//            - EventCapture class
-//            - EventClient class
+//     The test tools
+//
+//
 //
 //
 //
@@ -34,50 +34,18 @@
 #include <QFontDialog>
 #include <QFileDialog>
 
-synchroBasic * synchroBasic::base = NULL;
-
-synchroBasic::synchroBasic(TaoEventHandler * handler,
-                           QGLWidget *glw)
-    : tao_event_handler(handler), widget(glw),  win(NULL)
-{
-    base = this;
-    if ( ! glw )
-    {
-        foreach (QWidget *w, QApplication::topLevelWidgets())
-        {
-            if ((win = dynamic_cast<QMainWindow*>(w)) != NULL)
-            {
-                widget = dynamic_cast<QGLWidget *>(win->centralWidget());
-                if (widget != NULL)
-                    break;
-            }
-        }
-    }
-    else
-        win = dynamic_cast<QMainWindow*>(widget->window());
-}
-
-
-void synchroBasic::unproject(int x, int y, int , int *ux, int *uy, int *uz)
-{
-    *uz = 0;
-    *ux = x - widget->width() / 2;
-    *uy = widget->height() / 2 - y;
-}
-
-void synchroBasic::project (int x, int y, int , int *px, int *py, int *pz)
-{
-    *pz = 0;
-    *px = x + widget->width() / 2;
-    *py = widget->height() / 2 - y;
-}
-
 EventCapture::EventCapture(TaoEventHandler *handler, QGLWidget *glw) :
 // ----------------------------------------------------------------------------
-//   Creates a listener either on the provided glw or on the main QGLWidget
+//   Creates a new test.
 // ----------------------------------------------------------------------------
-    synchroBasic(handler, glw)
+    tao_event_handler(handler), widget(glw),  win(NULL)
 {
+
+    if ( ! glw )
+        foreach (QWidget *w, QApplication::topLevelWidgets())
+            if ((win = dynamic_cast<QMainWindow*>(w)) != NULL)
+                if ((widget = dynamic_cast<QGLWidget *>(win->centralWidget()) ) != NULL)
+                    break;
 }
 
 
@@ -86,12 +54,10 @@ void EventCapture::startCapture()
 //   Start recording a sequence of events
 // ----------------------------------------------------------------------------
 {
-    if ( ! win || ! widget ) return ;
     win->statusBar()->showMessage("Start event capture.");
-
-    // Says the handler capture is about to start
-   if ( ! tao_event_handler->beforeStart()) return;
-
+    tao_event_handler->beforeStart();
+// SYNCH
+    // start du serveur ?
     winSize = win->size();
 
     //connection
@@ -104,17 +70,21 @@ void EventCapture::startCapture()
     widget->installEventFilter(this);
     startTime.start();
 
-    // Says the handler the start is done
     tao_event_handler->afterStart();
+
+// SYNCH
+    // Envoyer un ordre de synchro (No page, page time, doc time, win size)
+
 }
 
 
-void EventCapture::stop()
+void EventCapture::stopCapture()
 // ----------------------------------------------------------------------------
 //   Stop recording events
 // ----------------------------------------------------------------------------
 {
-    // Says the handler capture is about to stop
+// SYNCH
+    // Ordre de fin // shutdown du serveur ?
     tao_event_handler->beforeStop();
 
     // disconnection
@@ -125,7 +95,6 @@ void EventCapture::stop()
     }
     widget->removeEventFilter(this);
 
-    // Says the handler the stop is done
     tao_event_handler->afterStop();
 
     win->statusBar()->showMessage( "End event capture.");
@@ -134,7 +103,7 @@ void EventCapture::stop()
 
 void EventCapture::recordAction(bool )
 // ----------------------------------------------------------------------------
-//   Records triggered QActions.
+//   Records actions.
 // ----------------------------------------------------------------------------
 {
     QAction* act = dynamic_cast<QAction*>(QObject::sender());
@@ -157,8 +126,7 @@ void EventCapture::recordColor(QColor color)
 {
     TaoColorActionEvent * evt =
             new TaoColorActionEvent(QObject::sender()->objectName(),
-                                     color.name(), color.alphaF(),
-                                     startTime.restart());
+                                     color.name(), startTime.restart());
     tao_event_handler->add(evt);
 }
 
@@ -194,24 +162,21 @@ void EventCapture::finishedDialog(int result)
 // ----------------------------------------------------------------------------
 {
     QObject *sender = QObject::sender();
-    if ( ! sender)
-        return;
-
-    QDialog * dialog = dynamic_cast<QDialog*>(sender);
-    if (dialog)
+    if (sender)
     {
-        disconnect(dialog, 0, this, 0);
+        QDialog * dialog = dynamic_cast<QDialog*>(sender);
+        if (dialog)
+        {
+            disconnect(dialog, 0, this, 0);
+        }
+        TaoDialogActionEvent* evt =
+                new TaoDialogActionEvent(sender->objectName(),
+                                          result, startTime.restart());
+        tao_event_handler->add(evt);
     }
-    TaoDialogActionEvent* evt =
-            new TaoDialogActionEvent(sender->objectName(),
-                                     result, startTime.restart());
-    tao_event_handler->add(evt);
-
 }
 
 /*
- * Intentionaly left as a comment because this part has not yet been reworked
- *
 void EventCapture::checkNow()
 // ----------------------------------------------------------------------------
 //   Records a check point and the view.
@@ -253,21 +218,11 @@ bool EventCapture::eventFilter(QObject */*obj*/, QEvent *evt)
             tao_event_handler->add(mouseEvent);
             break;
         }
-//    case QEvent::Wheel:
-//        {
-//            QWheelEvent *e = (QWheelEvent *)evt;
-//            int d = event->delta();
-//            Qt::Orientation orientation = event->orientation();
-//            // ICI mettre dx et dy de coter pour savoir ou est le centre.
-//            //ATTENTION on n'a que les mouvements due a la roulette...
-//            longlong dx = orientation == Qt::Horizontal ? d : 0;
-//            longlong dy = orientation == Qt::Vertical   ? d : 0;
-//            break;
-//        }
     case QEvent::ChildPolished:
         {
             QChildEvent *e = (QChildEvent*)evt;
             QString childName = e->child()->objectName();
+            std::cerr<< "Object polished " << +childName << std::endl; // CaB
             if ( childName.contains("colorDialog"))
             {
                 QColorDialog *diag = (QColorDialog*)e->child();
@@ -290,6 +245,8 @@ bool EventCapture::eventFilter(QObject */*obj*/, QEvent *evt)
                 QFileDialog *diag = (QFileDialog*)e->child();
                 connect(diag, SIGNAL(fileSelected(QString)),
                         this, SLOT(recordFile(QString)));
+//                connect(diag, SIGNAL(finished(int)),
+//                        this, SLOT(finishedDialog(int)));
             }
         }
     default:
@@ -301,32 +258,172 @@ bool EventCapture::eventFilter(QObject */*obj*/, QEvent *evt)
 }
 
 
-EventClient::EventClient(TaoEventHandler *handler, QGLWidget *glw):
+/*
+void EventCapture::addKeyPress(Qt::Key qtKey,
+                              Qt::KeyboardModifiers modifiers,
+                              int msecs)
 // ----------------------------------------------------------------------------
-//   Creates a player either on the provided glw or on the main QGLWidget
-// ----------------------------------------------------------------------------
-        synchroBasic(handler, glw)
-{}
-
-
-void EventClient::startClient()
-// ----------------------------------------------------------------------------
-//   Starts the player
+// Add a key press event to the list of action
 // ----------------------------------------------------------------------------
 {
-    if ( ! win || ! widget ) return ;
-    tao_event_handler->beforeStart();
-
-    tao_event_handler->afterStart();
+    testList.addKeyPress(qtKey, modifiers, msecs);
 }
 
 
-void EventClient::stop()
+void EventCapture::addKeyRelease(Qt::Key qtKey,
+                                Qt::KeyboardModifiers modifiers,
+                                int msecs)
 // ----------------------------------------------------------------------------
-//  Stop the player
+// Add a key release event to the list of action
 // ----------------------------------------------------------------------------
 {
-    tao_event_handler->beforeStop();
+    testList.addKeyRelease(qtKey, modifiers, msecs);
+}
 
-    tao_event_handler->afterStop();
+
+void EventCapture::addMousePress(Qt::MouseButton button,
+                                Qt::KeyboardModifiers modifiers,
+                                QPoint pos, int delay )
+// ----------------------------------------------------------------------------
+// Add a mouse press event to the list of action
+// ----------------------------------------------------------------------------
+{
+    testList.addMousePress(button, modifiers, pos, delay);
+}
+
+
+void EventCapture::addMouseRelease(Qt::MouseButton button,
+                                  Qt::KeyboardModifiers modifiers,
+                                  QPoint pos, int delay )
+// ----------------------------------------------------------------------------
+// Add a mouse release event to the list of action
+// ----------------------------------------------------------------------------
+{
+    testList.addMouseRelease(button, modifiers, pos, delay);
+
+}
+
+
+void EventCapture::addMouseMove(Qt::MouseButtons buttons,
+                               Qt::KeyboardModifiers modifiers,
+                               QPoint pos, int delay)
+// ----------------------------------------------------------------------------
+// Add a mouse move event to the list of action
+// ----------------------------------------------------------------------------
+{
+    testList.append(new TestMouseMoveEvent(buttons, modifiers, pos, delay));
+}
+
+
+void EventCapture::addMouseDClick(Qt::MouseButton button,
+                                 Qt::KeyboardModifiers modifiers,
+                                 QPoint pos, int delay)
+// ----------------------------------------------------------------------------
+// Add a mouse double click event to the list of action
+// ----------------------------------------------------------------------------
+{
+    testList.addMouseDClick(button, modifiers, pos, delay);
+}
+
+
+TestActionEvent * EventCapture::addAction(QString actName, int delay)
+// ----------------------------------------------------------------------------
+// Add an action to be replayed.
+// ----------------------------------------------------------------------------
+{
+    TestActionEvent* evt = new TestActionEvent(actName, delay);
+    testList.append(evt);
+    return evt;
+}
+
+
+TestCheckEvent * EventCapture::addCheck( int num, int delay)
+// ----------------------------------------------------------------------------
+// Add a mouse move event to the list of action
+// ----------------------------------------------------------------------------
+{
+    TestCheckEvent * evt = new TestCheckEvent(num, delay);
+    testList.append(evt);
+    return evt;
+}
+
+
+TestColorActionEvent * EventCapture::addColor(QString diagName,
+                                             QString colName,
+                                             int delay)
+// ----------------------------------------------------------------------------
+// Add an action to be replayed.
+// ----------------------------------------------------------------------------
+{
+    TestColorActionEvent * evt = new TestColorActionEvent(diagName,
+                                                          colName,
+                                                          delay);
+    testList.append(evt);
+    return evt;
+}
+
+
+TestFontActionEvent * EventCapture::addFont(QString diagName,
+                                           QString ftName, int delay)
+// ----------------------------------------------------------------------------
+// Add an action to be replayed.
+// ----------------------------------------------------------------------------
+{
+    TestFontActionEvent * evt = new TestFontActionEvent(diagName,
+                                                        ftName, delay);
+    testList.append(evt);
+    return evt;
+}
+
+
+TestFileActionEvent* EventCapture::addFile(QString diagName,
+                                          QString fileName, int delay)
+// ----------------------------------------------------------------------------
+// Add an action to be replayed.
+// ----------------------------------------------------------------------------
+{
+    TestFileActionEvent * evt = new TestFileActionEvent(diagName,
+                                                        fileName, delay);
+    testList.append(evt);
+    return evt;
+}
+
+
+TestDialogActionEvent* EventCapture::addDialogClose(QString objName,
+                                                   int result,  int delay)
+// ----------------------------------------------------------------------------
+// Add an action to be replayed.
+// ----------------------------------------------------------------------------
+{
+    TestDialogActionEvent * evt = new TestDialogActionEvent(objName,
+                                                            result, delay);
+    testList.append(evt);
+    return evt;
+}
+*/
+
+EventClient::EventClient(TaoEventHandler *handler, QGLWidget *glw):
+// ----------------------------------------------------------------------------
+//   Creates a new test.
+// ----------------------------------------------------------------------------
+        tao_event_client(handler), widget(glw),  win(NULL)
+{
+    if ( ! glw )
+        foreach (QWidget *w, QApplication::topLevelWidgets())
+            if ((win = dynamic_cast<QMainWindow*>(w)) != NULL)
+                if ((widget = dynamic_cast<QGLWidget *>(win->centralWidget()) ) != NULL)
+                    break;
+}
+
+void EventClient::startClient()
+{
+    tao_event_client->beforeStart();
+
+    tao_event_client->afterStart();
+}
+void EventClient::stopClient()
+{
+    tao_event_client->beforeStop();
+
+    tao_event_client->afterStop();
 }
