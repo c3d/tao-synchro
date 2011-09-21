@@ -30,7 +30,8 @@ HEADERS += \
     event_capture.h \
     traces.tbl \
     tao_control_event.h \
-    event_handler.h
+    event_handler.h \
+    doc/tao_synchro.doxy.h
 
 SOURCES += \
     tao_synchro.cpp \

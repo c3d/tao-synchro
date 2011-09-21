@@ -4,7 +4,7 @@
 //
 //   File Description:
 //
-//
+//     XL interface for synchronization feature.
 //
 //
 //
@@ -25,18 +25,10 @@
 #include "event_capture.h"
 
 using namespace XL;
-
-
 XL_DEFINE_TRACES
 
 static EventCapture currentCapture(new TaoSynchro);
 static EventClient currentClient(NULL);
-
-// ============================================================================
-//
-//   Capture functions
-//
-// ============================================================================
 
 
 Tree_p startCapture(Tree_p )
@@ -59,6 +51,9 @@ Tree_p stopCapture(Tree_p )
 }
 
 Tree_p startClient(Tree_p , text serverName, int serverPort)
+// ----------------------------------------------------------------------------
+//   Start playing a sequence of events
+// ----------------------------------------------------------------------------
 {
     currentClient.tao_event_client = new TaoSynchroClient(serverName,
                                                           serverPort,
@@ -70,6 +65,9 @@ Tree_p startClient(Tree_p , text serverName, int serverPort)
 
 
 Tree_p stopClient(Tree_p )
+// ----------------------------------------------------------------------------
+//   Stop playing a sequence of events
+// ----------------------------------------------------------------------------
 {
     currentClient.stopClient();
     return XL::xl_true;

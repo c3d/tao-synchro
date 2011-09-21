@@ -27,9 +27,15 @@
 #include <QFontDialog>
 #include <QFileDialog>
 
+#include <iostream>
+
 
 void TaoControlEvent::simulateQEvent(QEvent *e, QWidget* w)
+// ----------------------------------------------------------------------------
+//   Will post the QEvent onto the event queue for the QWidget
+// ----------------------------------------------------------------------------
 {
+    // No provided widget, will try to get the one with the keyboard focus.
     if (!w)
         w = QWidget::keyboardGrabber();
 
@@ -37,16 +43,27 @@ void TaoControlEvent::simulateQEvent(QEvent *e, QWidget* w)
         return;
 
     qApp->postEvent(w, e);
-
 }
+
+
 QDataStream & TaoControlEvent::serialize(QDataStream &out)
+// ----------------------------------------------------------------------------
+//   Serialize delay and event type, then data using the virtual method
+// ----------------------------------------------------------------------------
 {
     out << delay;
     out << getType();
     return serializeData(out);
 }
 
+
 TaoControlEvent *TaoControlEvent::unserialize(QDataStream &in)
+// ----------------------------------------------------------------------------
+//   Unserialize delay and event type, then data.
+// ----------------------------------------------------------------------------
+// Data are unserialized by the specific class.
+// Presence and length of data is not checked because it will consume too
+// much time. We assume the content is good due to initial handshake.
 {
     // Read delay
     quint32 delay = 0;
@@ -93,14 +110,23 @@ TaoControlEvent *TaoControlEvent::unserialize(QDataStream &in)
 }
 
 
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 //   TaoKeyEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 quint32 TaoKeyEvent::getType()
+// ----------------------------------------------------------------------------
+//   Tao control event type
+// ----------------------------------------------------------------------------
 {
     return event->type();
 }
+
+
 QString TaoKeyEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString cmd = QString("test_add_key_%5 %1, %2, %3 // %4\n")
                   .arg(event->key()).arg(event->modifiers()).arg(delay)
@@ -110,7 +136,11 @@ QString TaoKeyEvent::toTaoCmd()
     return cmd;
 }
 
+
 QDataStream &TaoKeyEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << (quint32) event->key();
     out << (quint32) event->modifiers();
@@ -120,8 +150,13 @@ QDataStream &TaoKeyEvent::serializeData(QDataStream &out)
 
     return out;
 }
+
+
 QDataStream & TaoKeyEvent::unserializeData(QDataStream &in,
                                            quint32 e_type)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     Qt::Key               key;
     Qt::KeyboardModifiers modifiers;
@@ -141,15 +176,24 @@ QDataStream & TaoKeyEvent::unserializeData(QDataStream &in,
     return in;
 }
 
-// ----------------------------------------------------------------------------
+
+// ****************************************************************************
 //   TaoMouseEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 quint32 TaoMouseEvent::getType()
+// ----------------------------------------------------------------------------
+//   Tao control event type
+// ----------------------------------------------------------------------------
 {
     return event->type();
 }
 
+
 QString TaoMouseEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString action;
     switch (event->type())
@@ -168,7 +212,11 @@ QString TaoMouseEvent::toTaoCmd()
     return cmd;
 }
 
+
 QDataStream &TaoMouseEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << event->pos();
     out << event->globalPos();
@@ -179,8 +227,12 @@ QDataStream &TaoMouseEvent::serializeData(QDataStream &out)
     return out;
 }
 
+
 QDataStream & TaoMouseEvent::unserializeData(QDataStream &in,
                                              quint32 e_type)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     QPoint pos, globalPos;
     Qt::MouseButton button;
@@ -199,24 +251,38 @@ QDataStream & TaoMouseEvent::unserializeData(QDataStream &in,
     return in;
 }
 
-// ----------------------------------------------------------------------------
+
+
+// ****************************************************************************
 //   TaoActionEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 QString TaoActionEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString cmd = QString("test_add_action \"%1\", %2 \n")
                   .arg(action_name).arg(delay);
     return cmd;
 }
 
+
 QDataStream &TaoActionEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << action_name;
     return out;
 }
 
+
 QDataStream & TaoActionEvent::unserializeData(QDataStream &in,
                                              quint32 )
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> action_name;
     return in;
@@ -224,6 +290,9 @@ QDataStream & TaoActionEvent::unserializeData(QDataStream &in,
 
 
 void TaoActionEvent::simulateNow(QWidget *w)
+// ----------------------------------------------------------------------------
+//  Runs immediatly the action associated with this event.
+// ----------------------------------------------------------------------------
 {
     QAction* act = w->parent()->findChild<QAction*>(action_name);
     if (act)
@@ -231,60 +300,93 @@ void TaoActionEvent::simulateNow(QWidget *w)
 }
 
 
-// ----------------------------------------------------------------------------
+
+// ****************************************************************************
 //   TaoColorActionEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 QString TaoColorActionEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_color \"%1\", \"%2\", %3\n")
-                  .arg(objName).arg(colorName).arg(delay);
+    QString cmd = QString("test_add_color \"%1\", \"%2\", %3, %4\n")
+                  .arg(objName).arg(colorName).arg(alpha).arg(delay);
     return cmd;
 }
 
+
 QDataStream &TaoColorActionEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << objName;
     out << colorName;
+    out << alpha;
     return out;
 }
 
+
 QDataStream & TaoColorActionEvent::unserializeData(QDataStream &in,
                                                    quint32)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> objName;
     in >> colorName;
+    in >> alpha;
     return in;
 }
 
 
 void TaoColorActionEvent::simulateNow(QWidget *w)
+// ----------------------------------------------------------------------------
+//  Runs immediatly the action associated with this event.
+// ----------------------------------------------------------------------------
 {
     QColorDialog* diag = w->findChild<QColorDialog*>(objName);
     QColor col(colorName);
+    col.setAlphaF(alpha);
     if (diag &&col.isValid())
         diag->setCurrentColor(col);
 
 }
 
-// ----------------------------------------------------------------------------
+
+
+// ****************************************************************************
 //   TaoFontActionEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 QString TaoFontActionEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString cmd = QString("test_add_font \"%1\", \"%2\", %3\n")
                   .arg(objName).arg(fontName).arg(delay);
     return cmd;
 }
 
+
 QDataStream &TaoFontActionEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << objName;
     out << fontName;
     return out;
 }
 
+
 QDataStream & TaoFontActionEvent::unserializeData(QDataStream &in,
                                                   quint32)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> objName;
     in >> fontName;
@@ -293,6 +395,9 @@ QDataStream & TaoFontActionEvent::unserializeData(QDataStream &in,
 
 
 void TaoFontActionEvent::simulateNow(QWidget *w)
+// ----------------------------------------------------------------------------
+//  Runs immediatly the action associated with this event.
+// ----------------------------------------------------------------------------
 {
     QFontDialog* diag = w->findChild<QFontDialog*>(objName);
     QFont ft;
@@ -302,25 +407,37 @@ void TaoFontActionEvent::simulateNow(QWidget *w)
 }
 
 
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 //   TaoFileActionEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 QString TaoFileActionEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString cmd = QString("test_add_file \"%1\", \"%2\", %3\n")
                   .arg(objName).arg(fileName).arg(delay);
     return cmd;
 }
 
+
 QDataStream &TaoFileActionEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << objName;
     out << fileName;
     return out;
 }
 
+
 QDataStream & TaoFileActionEvent::unserializeData(QDataStream &in,
                                                   quint32)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> objName;
     in >> fileName;
@@ -329,6 +446,9 @@ QDataStream & TaoFileActionEvent::unserializeData(QDataStream &in,
 
 
 void TaoFileActionEvent::simulateNow(QWidget *w)
+// ----------------------------------------------------------------------------
+//  Runs immediatly the action associated with this event.
+// ----------------------------------------------------------------------------
 {
     QFileDialog* diag = w->findChild<QFileDialog*>(objName);
     if (diag )
@@ -342,25 +462,37 @@ void TaoFileActionEvent::simulateNow(QWidget *w)
 
 
 
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 //   TaoDialogActionEvent Class
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+
 QString TaoDialogActionEvent::toTaoCmd()
+// ----------------------------------------------------------------------------
+//  Return a command line for Tao.
+// ----------------------------------------------------------------------------
 {
     QString cmd = QString("test_dialog_action \"%1\", \"%2\", %3\n")
                   .arg(objName).arg(result).arg(delay);
     return cmd;
 }
 
+
 QDataStream &TaoDialogActionEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << objName;
     out << result;
     return out;
 }
 
+
 QDataStream & TaoDialogActionEvent::unserializeData(QDataStream &in,
                                                     quint32)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> objName;
     in >> result;
@@ -369,6 +501,9 @@ QDataStream & TaoDialogActionEvent::unserializeData(QDataStream &in,
 
 
 void TaoDialogActionEvent::simulateNow(QWidget *w)
+// ----------------------------------------------------------------------------
+//  Runs immediatly the action associated with this event.
+// ----------------------------------------------------------------------------
 {
     QDialog* diag = w->findChild<QDialog*>(objName);
 
@@ -377,10 +512,15 @@ void TaoDialogActionEvent::simulateNow(QWidget *w)
  }
 
 
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 //   TaoCheckEvent Class
-// ----------------------------------------------------------------------------
+// NOT YET USED nor finished
+// ****************************************************************************
+
 QDataStream &TaoCheckEvent::serializeData(QDataStream &out)
+// ----------------------------------------------------------------------------
+//  Serialize event specific data.
+// ----------------------------------------------------------------------------
 {
     out << number;
     out << image;
@@ -389,6 +529,9 @@ QDataStream &TaoCheckEvent::serializeData(QDataStream &out)
 
 QDataStream & TaoCheckEvent::unserializeData(QDataStream &in,
                                              quint32)
+// ----------------------------------------------------------------------------
+//  Unserialize event specific data.
+// ----------------------------------------------------------------------------
 {
     in >> number;
     image = new QImage;
@@ -396,7 +539,8 @@ QDataStream & TaoCheckEvent::unserializeData(QDataStream &in,
     return in;
 }
 
-void TaoCheckEvent::simulateNow(QWidget *w)
+
+void TaoCheckEvent::simulateNow(QWidget */*w*/)
 // ----------------------------------------------------------------------------
 //  Perform a check againts the reference view.
 // ----------------------------------------------------------------------------
