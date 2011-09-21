@@ -22,9 +22,9 @@
 // ****************************************************************************
 
 #ifndef XL_TRACE_GROUP
-#define XL_TRACE_GROUP TaoSynchro
+#define XL_TRACE_GROUP TaoTester
 #endif
 
 TRACE(builtins)
-TRACE(synchro)
+TRACE(tester)
 
