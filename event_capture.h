@@ -6,9 +6,9 @@
 //
 //   File Description:
 //
-//     Event capture management.
-//
-//
+//     Event capture and replay management.
+//            - EventCapture class
+//            - EventClient class
 //
 //
 //
@@ -32,6 +32,9 @@
 
 
 struct EventCapture : public QObject
+// ----------------------------------------------------------------------------
+//   Capturing events
+// ----------------------------------------------------------------------------
 {
 Q_OBJECT
 
@@ -64,7 +67,11 @@ public:
 
 };
 
+
 struct EventClient : public QObject
+// ----------------------------------------------------------------------------
+//   Playing events
+// ----------------------------------------------------------------------------
 {
 Q_OBJECT
 
