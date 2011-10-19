@@ -45,10 +45,10 @@ PREFIX(Play,  tree,  "play", , return play(self);,
 */
 
 PREFIX(StartClient,  tree,  "start_client",
-       PARM(name, text, "Server name")
+       //PARM(name, text, "Server name")
        //PARM(port, integer, "Server port number")
        ,
-       return startClient(self, name);,
+       return startClient(self);,
        GROUP(capture)
        SYNOPSIS("Start to record ")
        DESCRIPTION("Start to record events in order to replay them "))

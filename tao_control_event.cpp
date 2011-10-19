@@ -20,13 +20,13 @@
 //  (C) 2011 Taodyne SAS
 // ****************************************************************************
 #include "tao_control_event.h"
-#include "tao_synchro.h"
 #include <QApplication>
 
 #include <QAction>
 #include <QColorDialog>
 #include <QFontDialog>
 #include <QFileDialog>
+
 #include <iostream>
 
 
@@ -218,10 +218,8 @@ QDataStream &TaoMouseEvent::serializeData(QDataStream &out)
 //  Serialize event specific data.
 // ----------------------------------------------------------------------------
 {
-    qint32 ux = 0, uy = 0, uz = 0;
-    synchroBasic::base->unproject(event->x(), event->y(), 0, &ux, &uy, &uz);
-    out << ux;
-    out << uy;
+    out << event->pos();
+    out << event->globalPos();
     out << (quint32) event->button();
     out << (quint32) event->buttons();
     out << (quint32) event->modifiers();
@@ -236,19 +234,18 @@ QDataStream & TaoMouseEvent::unserializeData(QDataStream &in,
 //  Unserialize event specific data.
 // ----------------------------------------------------------------------------
 {
-    int px = 0, py = 0, pz = 0;
-    qint32 ux = 0, uy = 0;
+    QPoint pos, globalPos;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
-    in >> ux;
-    in >> uy;
+
+    in >> pos;
+    in >> globalPos;
     in >> (quint32&) button;
     in >> (quint32&) buttons;
     in >> (quint32&) modifiers;
-    synchroBasic::base->project(ux, uy, 0, &px, &py, &pz);
-    QPoint pos(px, py);
-    event = new QMouseEvent ((QEvent::Type)e_type, pos, button,
+
+    event = new QMouseEvent ((QEvent::Type)e_type, pos, globalPos, button,
                              buttons, modifiers);
 
     return in;

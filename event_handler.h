@@ -77,11 +77,11 @@ protected slots:
     void removeClient();
 
 protected:
-    bool handShake(QTcpSocket *client);
+    QDataStream *handShake(QTcpSocket *client);
 
 
 protected:
-    std::vector< QTcpSocket * > outList;
+    std::vector< QDataStream * > outList;
 
     QTcpServer * tcpServer;
 };
@@ -98,7 +98,7 @@ class TaoSynchroClient : public TaoEventHandler
 {
     Q_OBJECT
 public:
-    TaoSynchroClient(text serverName, int serverPort);
+    TaoSynchroClient(text serverName, int serverPort, QGLWidget *widget);
     virtual ~TaoSynchroClient();
     virtual bool beforeStart();
     virtual bool afterStart();
@@ -119,6 +119,8 @@ protected:
     int serverPort;
 
     QTcpSocket * tcpSocket;
+    QDataStream  in;
+    QGLWidget  * widget;
 };
 
 
