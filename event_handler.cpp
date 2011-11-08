@@ -22,7 +22,6 @@
 // ****************************************************************************
 #include "event_handler.h"
 #include "tao_control_event.h"
-#include "event_capture.h"
 #include <QMessageBox>
 #include <QTcpSocket>
 
@@ -102,12 +101,13 @@ bool TaoSynchro::afterStop()
     tcpServer->close();
 
     // Close and clean each client connection
-    QTcpSocket *soc = NULL;
-    while( ! outList.empty())
+    QDataStream *out = NULL;
+    while((out = outList.back()))
     {
-        soc = outList.back();
         outList.pop_back();
+        QTcpSocket * soc = (QTcpSocket * )out->device();
         soc->disconnectFromHost();
+        delete out;
     }
 
     // clean memory
@@ -127,25 +127,11 @@ void TaoSynchro::add(TaoControlEvent *evt)
 // TaoSynchro is now the evt owner and must manage its lifecycle.
 {
     IFTRACE(synchro)
-            std::cerr << +evt->toTaoCmd();
-    // Serialize event into block QByteArray
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_7);
-    // Reserve message size location
-    out << (quint16)0;
-    evt->serialize(out);
-    // Set message size
-    out.device()->seek(0);
-    out << (quint16)(block.size() - sizeof(quint16));
-
-    // Send event to each client
-    foreach (QTcpSocket *client, outList)
+            std::cerr << +evt->toTaoCmd() << std::endl;
+    foreach (QDataStream *out, outList)
     {
-        client->write(block);
-        client->flush();
-        IFTRACE(synchro)
-                std::cerr << "\t Device flushed." << std::endl;
+        evt->serialize(*out);
+        ((QTcpSocket*)out->device())->flush();
     }
 
     // End of evt life.
@@ -166,13 +152,14 @@ void TaoSynchro::registerClient()
     if ( ! clientConnection)
         return;
 
-    if ( ! handShake(clientConnection) )
+    QDataStream *out = handShake(clientConnection);
+    if ( ! out )
         return ;
 
     connect(clientConnection, SIGNAL(disconnected()),
             this, SLOT(removeClient()));
 
-    outList.push_back(clientConnection);
+    outList.push_back(out);
 
     IFTRACE(synchro)
             std::cerr << "Server: Connection added\n";
@@ -187,12 +174,14 @@ void TaoSynchro::removeClient()
     QTcpSocket * client = dynamic_cast<QTcpSocket *>(QObject::sender());
     if ( !client ) return;
 
-    std::vector< QTcpSocket * >::iterator it;
+    std::vector< QDataStream * >::iterator it;
     for ( it = outList.begin() ; it != outList.end(); it++)
     {
-        if (*it == client)
+        QDataStream *tmp = *it;
+        if (tmp->device() == client)
         {
             outList.erase(it);
+            delete tmp;
             IFTRACE(synchro)
                     std::cerr << "Server: Client " << +client->peerName()
                     << " removed\n";
@@ -204,7 +193,7 @@ void TaoSynchro::removeClient()
 }
 
 
-bool TaoSynchro::handShake(QTcpSocket *client)
+QDataStream *TaoSynchro::handShake(QTcpSocket *client)
 // ----------------------------------------------------------------------------
 //  Synchrone handshake between client and server.
 // ----------------------------------------------------------------------------
@@ -212,37 +201,41 @@ bool TaoSynchro::handShake(QTcpSocket *client)
 {
     quint32 clientVersion = 0;
     quint32 clientMagic = 0;
-    QDataStream out(client);
-    out << (quint32) TAO_SYNCHRO_MAGIC ;
-    out << (quint32) TAO_SYNCHRO_VERSION ;
+    QDataStream *out = new QDataStream(client);
+    (*out) << (quint32) TAO_SYNCHRO_MAGIC ;
+    (*out) << (quint32) TAO_SYNCHRO_VERSION ;
     // wait up to 30s for data to be read, and then hope to got 4 bytes
     if ( ! client->waitForReadyRead() || client->bytesAvailable() < 8)
     {
         client->close();
+        delete out;
         IFTRACE(synchro)
                 std::cerr << "Server: Not enought byte to read.\n";
-        return false;
+        return NULL;
     }
-    out >> clientMagic;
-    out >> clientVersion;
+    (*out) >> clientMagic;
+    (*out) >> clientVersion;
     //Check client version compatibility
     if (clientMagic != TAO_SYNCHRO_MAGIC ||
         clientVersion != TAO_SYNCHRO_VERSION)
     {
         client->close();
+        delete out;
         IFTRACE(synchro)
                 std::cerr << "Bad magic number " << clientMagic
                 << " or server version " << TAO_SYNCHRO_VERSION
                 << " not compatible with client version " << clientVersion
                 << ".\n";
-        return false;
+        return NULL;
     }
-    return true;
+    out->setVersion(QDataStream::Qt_4_7);
+    return out;
 }
 
 
-TaoSynchroClient::TaoSynchroClient(text serverName, int serverPort ):
-        serverName(serverName), serverPort(serverPort)
+TaoSynchroClient::TaoSynchroClient(text serverName, int serverPort,
+                                   QGLWidget *widget):
+        serverName(serverName), serverPort(serverPort), widget(widget)
 // ----------------------------------------------------------------------------
 //  Client creation
 // ----------------------------------------------------------------------------
@@ -278,10 +271,10 @@ bool TaoSynchroClient::beforeStart()
 
     // Connection to host
     tcpSocket->connectToHost(+serverName, serverPort);
-    QDataStream  in(tcpSocket);
+    in.setDevice(tcpSocket);
 
     IFTRACE(synchro)
-            std::cerr << "Client: Connecting to server" << serverName
+            std::cerr << "Client: Connected to server" << serverName
             << " port " << serverPort << "\n";
     // Wait up to 30s for available data to read
     if ( !tcpSocket->waitForReadyRead() || tcpSocket->bytesAvailable() < 8)
@@ -368,9 +361,9 @@ void TaoSynchroClient::add(TaoControlEvent *evt)
 // ----------------------------------------------------------------------------
 {
     IFTRACE(synchro)
-            std::cerr << +evt->toTaoCmd();
+            std::cerr << +evt->toTaoCmd() << std::endl;
 
-    evt->simulateNow(synchroBasic::base->widget);
+    evt->simulateNow(widget);
     // end of evt life
     delete evt;
 }
@@ -382,46 +375,10 @@ void TaoSynchroClient::readEvent()
 // ----------------------------------------------------------------------------
 {
     IFTRACE(synchro)
-       std::cerr <<"->readEvent\n";
+            std::cerr <<"Event to be read\n";
 
-    QDataStream in(tcpSocket);
-    in.setVersion(QDataStream::Qt_4_7);
-
-    while(tcpSocket->bytesAvailable() > 1)
-    {
-        quint16 size = 0;
-        // Read 2 bytes and let them into the socket for next try
-        // if not enought data to read.
-        char buf[2];
-        if (tcpSocket->peek(buf, 2 ) != 2)
-        {
-            IFTRACE(synchro)
-               std::cerr <<"<- readEvent. Error peeking data size.\n";
-            return;
-        }
-        // Convert buf into uint16
-        QByteArray tmp(buf);
-        QDataStream sz(tmp);
-        sz >> size;
-        if (tcpSocket->bytesAvailable() < size + 2)
-        {
-            IFTRACE(synchro)
-               std::cerr <<"<- readEvent. Not enought data.\n";
-            return;
-        }
-
-        // Read (and remove) the size before reading event.
-        in >> size;
-
-        // Read event
-        IFTRACE(synchro)
-                std::cerr <<"Event to be read.\n";
-        TaoControlEvent *evt = TaoControlEvent::unserialize(in);
-        add(evt);
-
-    }
-    IFTRACE(synchro)
-       std::cerr <<"<- readEvent\n";
+    TaoControlEvent *evt = TaoControlEvent::unserialize(in);
+    add(evt);
 }
 
 
@@ -434,22 +391,19 @@ void TaoSynchroClient::displayError(QAbstractSocket::SocketError socketError)
     case QAbstractSocket::RemoteHostClosedError:
         break;
     case QAbstractSocket::HostNotFoundError:
-        QMessageBox::information(synchroBasic::base->widget,
-                                 tr("Synchro Client"),
+        QMessageBox::information(widget, tr("Synchro Client"),
                                  tr("The host was not found. Please check the "
                                     "host name and port settings."));
         break;
     case QAbstractSocket::ConnectionRefusedError:
-        QMessageBox::information(synchroBasic::base->widget,
-                                 tr("Synchro Client"),
+        QMessageBox::information(widget, tr("Synchro Client"),
                                  tr("The connection was refused by the peer. "
                                     "Make sure the Synchro server is running, "
                                     "and check that the host name and port "
                                     "settings are correct."));
         break;
     default:
-        QMessageBox::information(synchroBasic::base->widget,
-                                 tr("Synchro Client"),
+        QMessageBox::information(widget, tr("Synchro Client"),
                                  tr("The following error occurred: %1.")
                                  .arg(tcpSocket->errorString()));
     }
