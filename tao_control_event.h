@@ -5,16 +5,24 @@
 // ****************************************************************************
 //
 //   File Description:
-//
-//     Events used to control tao presentaion.
+//     Events used to control tao presentations.
 //     Used to save and replay a test or
 //     to send over the network and control a remote session.
 //
-//
-//
-//
-//
-//
+//     Actions from the master are represented by inherited classes of
+//  TaoControlEvent.
+//  * TaoKeyEvent : key press and key release events with modifiers and
+//       delay between previous event and this one.
+//  * TaoMouseEvent : mouse move, mouse button down, mouse button up events
+//       with modifiers and delay between previous event and this one.
+//  * TaoActionEvent : action from GUI element triggered events with
+//       delay between previous event and this one.
+//  * TaoColorActionEvent : event from the color chooser window.
+//  * TaoFontActionEvent : event from the font chooser window.
+//  * TaoFileActionEvent : event from the file chooser window.
+//  * TaoDialogActionEvent : close event from a dialog window.
+//  * TaoCheckEvent : Resynchronization event to align page being displayed,
+//      time from the beginning of page, etc...
 // ****************************************************************************
 // This software is property of Taodyne SAS - Confidential
 // Ce logiciel est la propriété de Taodyne SAS - Confidentiel
@@ -28,6 +36,9 @@
 #include <QMouseEvent>
 
 
+// ----------------------------------------------------------------------------
+//   Tao control event type
+// ----------------------------------------------------------------------------
 // To not interfer with QEvent::Type, we can use the registerEventType()
 // function, but we are not sure we will always have the same value, so as,
 // those types won't be used in a QEvent inherited object, we decide to use
@@ -39,6 +50,7 @@
 #define DIALOG_EVENT_TYPE  65540 // QEvent::MaxUser + 5
 #define CHECK_EVENT_TYPE   65541 // QEvent::MaxUser + 6
 
+
 class TaoControlEvent
 // ----------------------------------------------------------------------------
 //   Ancestor class of all tao control event type.
@@ -46,6 +58,7 @@ class TaoControlEvent
 // This class and descendent use sized type (quint32,...) to get read of
 // type length diffence between different architecture.
 {
+
 public:
     TaoControlEvent(uint delay) : delay(delay){}
     virtual ~TaoControlEvent(){}
@@ -95,7 +108,11 @@ public:
 
     virtual ~TaoKeyEvent()
     {
-        delete event;
+        if (event)
+        {
+            delete event;
+            event = NULL;
+        }
     }
 
     virtual QString toTaoCmd();
@@ -105,7 +122,10 @@ public:
                                           quint32 e_type);
     virtual void simulateNow(QWidget* w)
     {
-        simulateQEvent(event, w);
+        // Setting event to NULL because it will be deleted by the event queue
+        QEvent *tmp = event;
+        event = NULL;
+        simulateQEvent(tmp, w);
     }
     virtual quint32 getType();
 
@@ -132,7 +152,11 @@ public:
 
     virtual ~TaoMouseEvent()
     {
-        delete event;
+        if (event)
+        {
+            delete event;
+            event = NULL;
+        }
     }
 
     virtual QString toTaoCmd();
@@ -141,7 +165,12 @@ public:
     virtual QDataStream & unserializeData(QDataStream &in, quint32 e_type);
     virtual void simulateNow(QWidget* w)
     {
-        simulateQEvent(event, w);
+        // This will emit a mouse move event without modifiers...
+       // QCursor::setPos(event->globalPos());
+        // Setting event to NULL because it will be deleted by the event queue
+        QEvent *tmp = event;
+        event = NULL;
+        simulateQEvent(tmp, w);
     }
     virtual quint32 getType();
 
@@ -187,8 +216,9 @@ class TaoColorActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoColorActionEvent(QString objName, QString name, int delay)
-        : TaoControlEvent(delay), objName(objName), colorName(name) {}
+    TaoColorActionEvent(QString objName, QString name, qreal alpha, int delay)
+        : TaoControlEvent(delay), objName(objName), colorName(name),
+        alpha(alpha) {}
 
     virtual QString toTaoCmd();
 
@@ -201,6 +231,7 @@ public:
 protected:
     QString objName;
     QString colorName;
+    qreal   alpha;
 public:
     TaoColorActionEvent(uint delay)
         : TaoControlEvent(delay) {}

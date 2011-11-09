@@ -4,7 +4,7 @@
 //
 //   File Description:
 //
-//
+//     XL interface for synchronization feature.
 //
 //
 //
@@ -25,26 +25,21 @@
 #include "event_capture.h"
 
 using namespace XL;
-
-
 XL_DEFINE_TRACES
-
-static EventCapture currentCapture(new TaoSynchro);
-static EventClient currentClient(NULL);
-
-// ============================================================================
-//
-//   Capture functions
-//
-// ============================================================================
-
 
 Tree_p startCapture(Tree_p )
 // ----------------------------------------------------------------------------
 //   Start recording a sequence of events
 // ----------------------------------------------------------------------------
 {
-    currentCapture.startCapture();
+    if (synchroBasic::base)
+    {
+        synchroBasic::base->stop();
+        delete synchroBasic::base;
+    }
+    EventCapture *currentCapture = new EventCapture(new TaoSynchro);
+    synchroBasic::base = currentCapture;
+    currentCapture->startCapture();
     return XL::xl_true;
 }
 
@@ -54,24 +49,36 @@ Tree_p stopCapture(Tree_p )
 //   Stop recording events
 // ----------------------------------------------------------------------------
 {
-    currentCapture.stopCapture();
+    synchroBasic::base->stop();
     return XL::xl_true;
 }
 
 Tree_p startClient(Tree_p , text serverName, int serverPort)
+// ----------------------------------------------------------------------------
+//   Start playing a sequence of events
+// ----------------------------------------------------------------------------
 {
-    currentClient.tao_event_client = new TaoSynchroClient(serverName,
-                                                          serverPort,
-                                                          currentClient.widget);
-    currentClient.startClient();
+    if (synchroBasic::base)
+    {
+        synchroBasic::base->stop();
+        delete synchroBasic::base;
+    }
+    TaoSynchroClient *clt = new TaoSynchroClient(serverName,
+                                                 serverPort);
+    EventClient *currentClient = new EventClient(clt);
+    synchroBasic::base = currentClient;
+    currentClient->startClient();
     return XL::xl_true;
 
 }
 
 
 Tree_p stopClient(Tree_p )
+// ----------------------------------------------------------------------------
+//   Stop playing a sequence of events
+// ----------------------------------------------------------------------------
 {
-    currentClient.stopClient();
+    synchroBasic::base->stop();
     return XL::xl_true;
 }
 
