@@ -23,8 +23,6 @@
 // ****************************************************************************
 
 #include "main.h"
-#include "tao/module_api.h"
-
 #include "event_capture.h"
 
 

@@ -20,6 +20,7 @@
 //  (C) 2011 Taodyne SAS
 // ****************************************************************************
 #include "tao_synchro.h"
+#include "tao/module_api.h"
 
 #include "event_handler.h"
 #include "event_capture.h"
@@ -91,9 +92,9 @@ int module_init(const Tao::ModuleApi *api, const Tao::ModuleInfo *)
     XL_INIT_TRACES();
 
     if (api->checkLicense("TaoSynchro 1.0", true))
-        return 0;
+        return no_error;
 
-    return -1;
+    return error_invalid_license;
 }
 
 
