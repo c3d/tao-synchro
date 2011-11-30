@@ -82,3 +82,25 @@ Tree_p stopClient(Tree_p )
     return XL::xl_true;
 }
 
+
+int module_init(const Tao::ModuleApi *api, const Tao::ModuleInfo *)
+// ----------------------------------------------------------------------------
+//   Initialize the Tao module
+// ----------------------------------------------------------------------------
+{
+    XL_INIT_TRACES();
+
+    if (api->checkLicense("TaoSynchro 1.0", true))
+        return 0;
+
+    return -1;
+}
+
+
+int module_exit()
+// ----------------------------------------------------------------------------
+//   Uninitialize the Tao module
+// ----------------------------------------------------------------------------
+{
+    return 0;
+}
