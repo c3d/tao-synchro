@@ -30,8 +30,28 @@
 #include <QTime>
 #include <QSize>
 
+struct synchroBasic : QObject
+{
+    Q_OBJECT
 
-struct EventCapture : public QObject
+    public:
+    synchroBasic(TaoEventHandler * handler,
+                 QGLWidget *widget = NULL);
+    virtual ~synchroBasic(){delete tao_event_handler;}
+    void unproject(int x, int y, int z, int *ux, int *uy, int *uz);
+    void project (int x, int y, int z, int *px, int *py, int *pz);
+
+    virtual void stop()=0;
+
+    TaoEventHandler * tao_event_handler;
+    QGLWidget *widget;
+    QMainWindow * win ;
+    QSize         winSize;
+
+    static synchroBasic* base;
+};
+
+struct EventCapture : public synchroBasic
 // ----------------------------------------------------------------------------
 //   Capturing events
 // ----------------------------------------------------------------------------
@@ -42,7 +62,7 @@ public:
     EventCapture(TaoEventHandler *handler, QGLWidget *widget = NULL);
 
     void startCapture();
-    void stopCapture();
+    virtual void stop();
 
     // Spying events on widget
     bool eventFilter(QObject *obj, QEvent *evt);
@@ -54,21 +74,13 @@ public slots:
     void recordFile(QString filename);
     void finishedDialog(int result);
 
-
 public:
-    TaoEventHandler * tao_event_handler;
-
-    QGLWidget *widget;
     QTime      startTime;
-
-    QMainWindow * win ;
-    QSize         winSize;
-
 
 };
 
 
-struct EventClient : public QObject
+struct EventClient : public synchroBasic
 // ----------------------------------------------------------------------------
 //   Playing events
 // ----------------------------------------------------------------------------
@@ -79,14 +91,7 @@ public:
     EventClient(TaoEventHandler *handler, QGLWidget *widget = NULL);
 
     void startClient();
-    void stopClient();
-
-    TaoEventHandler * tao_event_client;
-
-    QGLWidget *widget;
-
-    QMainWindow * win ;
-    QSize         winSize;
+    virtual void stop();
 
 };
 #endif // EVENTCAPTURE_H

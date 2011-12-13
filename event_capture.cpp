@@ -34,12 +34,13 @@
 #include <QFontDialog>
 #include <QFileDialog>
 
-EventCapture::EventCapture(TaoEventHandler *handler, QGLWidget *glw) :
-// ----------------------------------------------------------------------------
-//   Creates a listener either on the provided glw or on the main QGLWidget
-// ----------------------------------------------------------------------------
-    tao_event_handler(handler), widget(glw),  win(NULL)
+synchroBasic * synchroBasic::base = NULL;
+
+synchroBasic::synchroBasic(TaoEventHandler * handler,
+                           QGLWidget *glw)
+    : tao_event_handler(handler), widget(glw),  win(NULL)
 {
+    base = this;
     if ( ! glw )
     {
         foreach (QWidget *w, QApplication::topLevelWidgets())
@@ -52,6 +53,31 @@ EventCapture::EventCapture(TaoEventHandler *handler, QGLWidget *glw) :
             }
         }
     }
+    else
+        win = dynamic_cast<QMainWindow*>(widget->window());
+}
+
+
+void synchroBasic::unproject(int x, int y, int , int *ux, int *uy, int *uz)
+{
+    *uz = 0;
+    *ux = x - widget->width() / 2;
+    *uy = widget->height() / 2 - y;
+}
+
+void synchroBasic::project (int x, int y, int , int *px, int *py, int *pz)
+{
+    *pz = 0;
+    *px = x + widget->width() / 2;
+    *py = widget->height() / 2 - y;
+}
+
+EventCapture::EventCapture(TaoEventHandler *handler, QGLWidget *glw) :
+// ----------------------------------------------------------------------------
+//   Creates a listener either on the provided glw or on the main QGLWidget
+// ----------------------------------------------------------------------------
+    synchroBasic(handler, glw)
+{
 }
 
 
@@ -60,6 +86,7 @@ void EventCapture::startCapture()
 //   Start recording a sequence of events
 // ----------------------------------------------------------------------------
 {
+    if ( ! win || ! widget ) return ;
     win->statusBar()->showMessage("Start event capture.");
 
     // Says the handler capture is about to start
@@ -82,7 +109,7 @@ void EventCapture::startCapture()
 }
 
 
-void EventCapture::stopCapture()
+void EventCapture::stop()
 // ----------------------------------------------------------------------------
 //   Stop recording events
 // ----------------------------------------------------------------------------
@@ -226,6 +253,17 @@ bool EventCapture::eventFilter(QObject */*obj*/, QEvent *evt)
             tao_event_handler->add(mouseEvent);
             break;
         }
+//    case QEvent::Wheel:
+//        {
+//            QWheelEvent *e = (QWheelEvent *)evt;
+//            int d = event->delta();
+//            Qt::Orientation orientation = event->orientation();
+//            // ICI mettre dx et dy de coter pour savoir ou est le centre.
+//            //ATTENTION on n'a que les mouvements due a la roulette...
+//            longlong dx = orientation == Qt::Horizontal ? d : 0;
+//            longlong dy = orientation == Qt::Vertical   ? d : 0;
+//            break;
+//        }
     case QEvent::ChildPolished:
         {
             QChildEvent *e = (QChildEvent*)evt;
@@ -267,21 +305,8 @@ EventClient::EventClient(TaoEventHandler *handler, QGLWidget *glw):
 // ----------------------------------------------------------------------------
 //   Creates a player either on the provided glw or on the main QGLWidget
 // ----------------------------------------------------------------------------
-        tao_event_client(handler), widget(glw),  win(NULL)
-{
-    if ( ! glw )
-    {
-        foreach (QWidget *w, QApplication::topLevelWidgets())
-        {
-            if ((win = dynamic_cast<QMainWindow*>(w)) != NULL)
-            {
-                widget = dynamic_cast<QGLWidget *>(win->centralWidget());
-                if (widget != NULL)
-                    break;
-            }
-        }
-    }
-}
+        synchroBasic(handler, glw)
+{}
 
 
 void EventClient::startClient()
@@ -289,18 +314,19 @@ void EventClient::startClient()
 //   Starts the player
 // ----------------------------------------------------------------------------
 {
-    tao_event_client->beforeStart();
+    if ( ! win || ! widget ) return ;
+    tao_event_handler->beforeStart();
 
-    tao_event_client->afterStart();
+    tao_event_handler->afterStart();
 }
 
 
-void EventClient::stopClient()
+void EventClient::stop()
 // ----------------------------------------------------------------------------
 //  Stop the player
 // ----------------------------------------------------------------------------
 {
-    tao_event_client->beforeStop();
+    tao_event_handler->beforeStop();
 
-    tao_event_client->afterStop();
+    tao_event_handler->afterStop();
 }
