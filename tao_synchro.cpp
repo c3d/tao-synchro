@@ -91,7 +91,7 @@ int module_init(const Tao::ModuleApi *api, const Tao::ModuleInfo *)
 {
     XL_INIT_TRACES();
 
-    if (api->checkImpressOrLicense("TaoSynchro 1.0"))
+    if (api->checkLicense("TaoSynchro 1.0", true))
         return no_error;
 
     return error_invalid_license;
