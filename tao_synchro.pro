@@ -23,7 +23,8 @@ QT += core gui opengl network
 
 OTHER_FILES += \
     tao_synchro.xl \
-    tao_synchro.tbl
+    tao_synchro.tbl \
+    tao_synchro.taokey.notsigned
 
 HEADERS += \
     tao_synchro.h \
@@ -38,3 +39,6 @@ SOURCES += \
     event_capture.cpp \
     tao_control_event.cpp \
     event_handler.cpp
+
+LICENSE_FILES = tao_synchro.taokey.notsigned
+include(../licenses.pri)
