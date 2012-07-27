@@ -35,7 +35,6 @@
 #include <QFileDialog>
 
 synchroBasic * synchroBasic::base = NULL;
-const Tao::ModuleApi * synchroBasic::tao;
 
 synchroBasic::synchroBasic(TaoEventHandler * handler,
                            QGLWidget *glw)
@@ -48,12 +47,9 @@ synchroBasic::synchroBasic(TaoEventHandler * handler,
         {
             if ((win = dynamic_cast<QMainWindow*>(w)) != NULL)
             {
-                QList<QGLWidget *> list =
-                        win->findChildren<QGLWidget *>(QRegExp("[W|w]idget.*"));
-                if (list.size() < 1) continue;
-
-                widget = list.first();
-                break;
+                widget = dynamic_cast<QGLWidget *>(win->centralWidget());
+                if (widget != NULL)
+                    break;
             }
         }
     }
@@ -96,17 +92,15 @@ void EventCapture::startCapture()
     // Says the handler capture is about to start
    if ( ! tao_event_handler->beforeStart()) return;
 
-    winSize = widget->size();
+    winSize = win->size();
 
     //connection
-    foreach (QAction* act,  win->findChildren<QAction*>())
+    foreach (QAction* act,  widget->parent()->findChildren<QAction*>())
     {
         if (act->objectName().startsWith("toolbar:test"))
             continue;
          connect(act, SIGNAL(triggered(bool)), this, SLOT(recordAction(bool)));
     }
-    oldMouseTracking = widget->hasMouseTracking();
-    widget->setMouseTracking(true);
     widget->installEventFilter(this);
     startTime.start();
 
@@ -129,7 +123,6 @@ void EventCapture::stop()
         disconnect(act, SIGNAL(triggered(bool)),
                    this, SLOT(recordAction(bool)));
     }
-    widget->setMouseTracking(oldMouseTracking);
     widget->removeEventFilter(this);
 
     // Says the handler the stop is done
@@ -216,6 +209,22 @@ void EventCapture::finishedDialog(int result)
 
 }
 
+/*
+ * Intentionaly left as a comment because this part has not yet been reworked
+ *
+void EventCapture::checkNow()
+// ----------------------------------------------------------------------------
+//   Records a check point and the view.
+// ----------------------------------------------------------------------------
+{
+    QImage shot = widget->grabFrameBuffer(true);
+    TaoCheckEvent *check = new TaoCheckEvent(checkPointList.size(),
+                                             shot,
+                                             startTime.restart());
+    tao_event_handler->add(check);
+}
+
+*/
 
 bool EventCapture::eventFilter(QObject */*obj*/, QEvent *evt)
 // ----------------------------------------------------------------------------
@@ -318,6 +327,6 @@ void EventClient::stop()
 // ----------------------------------------------------------------------------
 {
     tao_event_handler->beforeStop();
-    tao->refreshOn(QEvent::Timer, -1.0);
+
     tao_event_handler->afterStop();
 }

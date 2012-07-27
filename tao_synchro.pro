@@ -24,8 +24,7 @@ QT += core gui opengl network
 OTHER_FILES += \
     tao_synchro.xl \
     tao_synchro.tbl \
-    tao_synchro.taokey.notsigned \
-    doc/Doxyfile.in
+    tao_synchro.taokey.notsigned
 
 HEADERS += \
     tao_synchro.h \
@@ -33,24 +32,13 @@ HEADERS += \
     traces.tbl \
     tao_control_event.h \
     event_handler.h \
-    doc/tao_synchro.doxy.h \
-    taosynchro_eventhandler.h \
-    startclient.h
+    doc/tao_synchro.doxy.h
 
 SOURCES += \
     tao_synchro.cpp \
     event_capture.cpp \
     tao_control_event.cpp \
-    taosynchro_eventhandler.cpp \
-    startclient.cpp
+    event_handler.cpp
 
 LICENSE_FILES = tao_synchro.taokey.notsigned
 include(../licenses.pri)
-
-FORMS += \
-    startclient.ui
-
-QMAKE_SUBSTITUTES = doc/Doxyfile.in
-DOXYFILE = doc/Doxyfile
-DOXYLANG = en,fr
-include(../modules_doc.pri)

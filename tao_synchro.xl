@@ -2,8 +2,8 @@
 
 module_description
         id "4D6BA446-FAA5-4749-BA9F-4B3F126A618B"
-        name "Tao Synchro"
-        description "Adds primitives to synchronize Tao instances."
+        name "Tao synchro"
+        description "Adds primitives to synchronize n Tao instances."
         import_name "TaoSynchro"
         author "Taodyne SAS"
         website "http://www.taodyne.com"
@@ -11,12 +11,12 @@ module_description
 
 module_description "fr",
         name "Synchronisation de Tao"
-        description "Primitives pour synchroniser plusieurs instances de Tao."
+        description "Primitives pour synchroniser n instances de Tao."
 
 toolbar_synch ->
-    menu "toolbar:synchro", "Synchro"
-    menu_item "toolbar:synchro > start", "Start master", { start_capture }
-    menu_item "toolbar:synchro > play",  "Start client", { start_client "127.0.0.1"}
-    menu_item "toolbar:synchro > stop",  "Stop",         { stop_synchro }
+    menu "toolbar:synchro", "synchro"
+    menu_item "toolbar:test > start", "start master", { start_capture }
+    menu_item "toolbar:test > play",  "start client", { start_client "192.168.40.62"}
+    menu_item "toolbar:test > stop",  "stop",         { stop_capture }
 
 

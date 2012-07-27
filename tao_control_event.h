@@ -29,14 +29,12 @@
 //  (C) 2011 Catherine Burvelle <cathy@taodyne.com>
 //  (C) 2011 Taodyne SAS
 // ****************************************************************************
-#include <QPoint>
-#include <QImage>
+
 #include <QWidget>
 #include <QEvent>
 #include <QKeyEvent>
 #include <QMouseEvent>
 
-#include <iostream>
 
 // ----------------------------------------------------------------------------
 //   Tao control event type
@@ -62,7 +60,7 @@ class TaoControlEvent
 {
 
 public:
-    TaoControlEvent(quint32 delay) : delay(delay){}
+    TaoControlEvent(uint delay) : delay(delay){}
     virtual ~TaoControlEvent(){}
 
     // The output string is the xl command that represent the event.
@@ -90,7 +88,7 @@ public:
     quint32 getDelay() {return delay;}
 
 protected:
-    // The delay in millisecond before running this event
+    // The delay before running this event
     quint32 delay;
 
 };
@@ -105,9 +103,8 @@ class TaoKeyEvent: public TaoControlEvent
 // let the postEvent method deals with it, and delete it.
 {
 public:
-    TaoKeyEvent(QKeyEvent &event, quint32 delay)
+    TaoKeyEvent(QKeyEvent &event, uint delay)
         : TaoControlEvent(delay), event(new QKeyEvent(event)) {}
-
 
     virtual ~TaoKeyEvent()
     {
@@ -135,7 +132,7 @@ public:
 protected:
     QKeyEvent *event;
 public:
-    TaoKeyEvent(quint32 delay)
+    TaoKeyEvent(uint delay)
         : TaoControlEvent(delay), event(NULL) {}
 
 };
@@ -150,7 +147,7 @@ class TaoMouseEvent: public TaoControlEvent
 // let the postEvent method deals with it, and delete it.
 {
 public:
-    TaoMouseEvent(QMouseEvent &event, quint32 delay)
+    TaoMouseEvent(QMouseEvent &event, uint delay)
         : TaoControlEvent(delay), event(new QMouseEvent(event)) {}
 
     virtual ~TaoMouseEvent()
@@ -176,12 +173,11 @@ public:
         simulateQEvent(tmp, w);
     }
     virtual quint32 getType();
-    virtual TaoMouseEvent * merge(TaoMouseEvent* e);
 
 protected:
     QMouseEvent *event;
 public:
-    TaoMouseEvent(quint32 delay)
+    TaoMouseEvent(uint delay)
         : TaoControlEvent(delay), event(NULL) {}
 
 };
@@ -194,7 +190,7 @@ class TaoActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoActionEvent(QString name, quint32 delay)
+    TaoActionEvent(QString name, int delay)
         : TaoControlEvent(delay), action_name(name) {}
 
     virtual QString toTaoCmd();
@@ -208,7 +204,7 @@ public:
 protected:
     QString action_name;
 public:
-    TaoActionEvent(quint32 delay)
+    TaoActionEvent(uint delay)
         : TaoControlEvent(delay) {}
 
 };
@@ -220,7 +216,7 @@ class TaoColorActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoColorActionEvent(QString objName, QString name, qreal alpha, quint32 delay)
+    TaoColorActionEvent(QString objName, QString name, qreal alpha, int delay)
         : TaoControlEvent(delay), objName(objName), colorName(name),
         alpha(alpha) {}
 
@@ -237,7 +233,7 @@ protected:
     QString colorName;
     qreal   alpha;
 public:
-    TaoColorActionEvent(quint32 delay)
+    TaoColorActionEvent(uint delay)
         : TaoControlEvent(delay) {}
 
 };
@@ -249,7 +245,7 @@ class TaoFontActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoFontActionEvent(QString objName, QString name, quint32 delay)
+    TaoFontActionEvent(QString objName, QString name, int delay)
         : TaoControlEvent(delay), objName(objName), fontName(name) {}
 
     virtual QString toTaoCmd();
@@ -265,7 +261,7 @@ protected:
     QString fontName;
 
 public:
-    TaoFontActionEvent(quint32 delay)
+    TaoFontActionEvent(uint delay)
         : TaoControlEvent(delay) {}
 };
 
@@ -275,7 +271,7 @@ class TaoFileActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoFileActionEvent(QString objName, QString name, quint32 delay)
+    TaoFileActionEvent(QString objName, QString name, int delay)
         : TaoControlEvent(delay), objName(objName), fileName(name) {}
 
     virtual QString toTaoCmd();
@@ -290,7 +286,7 @@ protected:
     QString objName;
     QString fileName;
 public:
-    TaoFileActionEvent(quint32 delay)
+    TaoFileActionEvent(uint delay)
         : TaoControlEvent(delay) {}
 
 };
@@ -302,7 +298,7 @@ class TaoDialogActionEvent: public TaoControlEvent
 // ----------------------------------------------------------------------------
 {
 public:
-    TaoDialogActionEvent(QString objName, int result, quint32 delay)
+    TaoDialogActionEvent(QString objName, int result, int delay)
         : TaoControlEvent(delay), objName(objName), result(result) {}
 
     virtual QString toTaoCmd();
@@ -317,11 +313,36 @@ protected:
     QString objName;
     qint32  result;
 public:
-    TaoDialogActionEvent(quint32 delay)
+    TaoDialogActionEvent(uint delay)
         : TaoControlEvent(delay) {}
 
 };
 
 
+class TaoCheckEvent: public TaoControlEvent
+// ----------------------------------------------------------------------------
+//   Class used to store QAction events with other mouse/key events
+// ----------------------------------------------------------------------------
+{
+public:
+    TaoCheckEvent(int num, QImage* image, int delay)
+        : TaoControlEvent(delay), number(num), image(image) {}
+
+    virtual QString toTaoCmd();
+
+    virtual QDataStream & serializeData(QDataStream &out);
+    virtual QDataStream & unserializeData(QDataStream &in, quint32 e_type);
+    virtual void simulateNow(QWidget *w);
+
+    virtual quint32 getType() { return CHECK_EVENT_TYPE;}
+
+protected:
+    qint16 number;
+    QImage *image;
+public:
+    TaoCheckEvent(uint delay)
+        : TaoControlEvent(delay) {}
+
+};
 
 #endif // TAOCONTROLEVENT_H

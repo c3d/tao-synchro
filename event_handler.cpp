@@ -20,7 +20,7 @@
 //  (C) 2011 Catherine Burvelle <cathy@taodyne.com>
 //  (C) 2011 Taodyne SAS
 // ****************************************************************************
-#include "taosynchro_eventhandler.h"
+#include "event_handler.h"
 #include "tao_control_event.h"
 #include "event_capture.h"
 #include <QMessageBox>
