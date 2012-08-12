@@ -21,7 +21,6 @@
 //  (C) 2010 Taodyne SAS
 // ***************************************************************************
 
-#include "tao_synchro.h"
 /*
 NAME("to_file")
 NAME("to_network")
