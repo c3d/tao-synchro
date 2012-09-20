@@ -22,8 +22,9 @@
 #include "tao_synchro.h"
 #include "tao/module_api.h"
 
-#include "event_handler.h"
+#include "taosynchro_eventhandler.h"
 #include "event_capture.h"
+
 
 using namespace XL;
 XL_DEFINE_TRACES
@@ -91,6 +92,7 @@ int module_init(const Tao::ModuleApi *api, const Tao::ModuleInfo *)
 {
     XL_INIT_TRACES();
 
+    synchroBasic::tao = api;
     if (api->checkImpressOrLicense("TaoSynchro 1.0"))
         return no_error;
 
