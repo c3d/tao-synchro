@@ -99,9 +99,9 @@ TaoControlEvent *TaoControlEvent::unserialize(QDataStream &in)
     case DIALOG_EVENT_TYPE:
         evt = new TaoDialogActionEvent(delay);
         break;
-    case CHECK_EVENT_TYPE:
-        evt = new TaoCheckEvent(delay);
-        break;
+//    case CHECK_EVENT_TYPE:
+//        evt = new TaoCheckEvent(delay);
+//        break;
     default:
         return NULL;
     }
@@ -128,7 +128,7 @@ QString TaoKeyEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_key_%5 %1, %2, %3 // %4\n")
+    QString cmd = QString("test_add_key_%5 %1, %2, %3 // %4")
                   .arg(event->key()).arg(event->modifiers()).arg(delay)
                   .arg(event->text())
                   .arg((event->type() == QEvent::KeyPress ?
@@ -205,10 +205,11 @@ QString TaoMouseEvent::toTaoCmd()
     default: action = "unknown";
     }
 
-    QString cmd = QString("test_add_mouse_%6 %1, %2, %3, %4, %5\n")
-                  .arg(event->button()).arg(event->modifiers())
-                  .arg(event->pos().x()).arg(event->pos().y())
-                  .arg(delay).arg(action);
+    QString cmd = QString("test_add_mouse_%7 %1, %2, %3, %4, %5, %6")
+            .arg(event->button()).arg(event->buttons())
+            .arg(event->modifiers())
+            .arg(event->pos().x()).arg(event->pos().y())
+            .arg(delay).arg(action);
     return cmd;
 }
 
@@ -254,6 +255,19 @@ QDataStream & TaoMouseEvent::unserializeData(QDataStream &in,
     return in;
 }
 
+TaoMouseEvent * TaoMouseEvent::merge(TaoMouseEvent* e)
+// ----------------------------------------------------------------------------
+//  merge time from previous MouseEvent
+// ----------------------------------------------------------------------------
+{
+    if (!e ) return this;
+    if (getType() != e->getType()) return NULL;
+    if (event->button() != e->event->button()) return NULL;
+    if (event->buttons() != e->event->buttons()) return NULL;
+    if (event->modifiers() != e->event->modifiers()) return NULL;
+    delay += e->delay;
+    return this;
+}
 
 
 // ****************************************************************************
@@ -265,7 +279,7 @@ QString TaoActionEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_action \"%1\", %2 \n")
+    QString cmd = QString("test_add_action \"%1\", %2")
                   .arg(action_name).arg(delay);
     return cmd;
 }
@@ -297,9 +311,15 @@ void TaoActionEvent::simulateNow(QWidget *w)
 //  Runs immediatly the action associated with this event.
 // ----------------------------------------------------------------------------
 {
-    QAction* act = w->parent()->findChild<QAction*>(action_name);
+    QAction* act = w->window()->findChild<QAction*>(action_name);
+    std::cerr << "TaoActionEvent::simulateNow " << action_name.toStdString() <<std::endl;
     if (act)
-        act->activate(QAction::Trigger);
+    {
+        std::cerr << "\tActivation\n";
+        act->trigger();//activate(QAction::Trigger);
+    }
+    else
+        std::cerr << "\tNOT FOUND\n";
 }
 
 
@@ -313,7 +333,7 @@ QString TaoColorActionEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_color \"%1\", \"%2\", %3, %4\n")
+    QString cmd = QString("test_add_color \"%1\", \"%2\", %3, %4")
                   .arg(objName).arg(colorName).arg(alpha).arg(delay);
     return cmd;
 }
@@ -349,7 +369,7 @@ void TaoColorActionEvent::simulateNow(QWidget *w)
 //  Runs immediatly the action associated with this event.
 // ----------------------------------------------------------------------------
 {
-    QColorDialog* diag = w->findChild<QColorDialog*>(objName);
+    QColorDialog* diag = w->window()->findChild<QColorDialog*>(objName);
     QColor col(colorName);
     col.setAlphaF(alpha);
     if (diag &&col.isValid())
@@ -368,7 +388,7 @@ QString TaoFontActionEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_font \"%1\", \"%2\", %3\n")
+    QString cmd = QString("test_add_font \"%1\", \"%2\", %3")
                   .arg(objName).arg(fontName).arg(delay);
     return cmd;
 }
@@ -402,7 +422,7 @@ void TaoFontActionEvent::simulateNow(QWidget *w)
 //  Runs immediatly the action associated with this event.
 // ----------------------------------------------------------------------------
 {
-    QFontDialog* diag = w->findChild<QFontDialog*>(objName);
+    QFontDialog* diag = w->window()->findChild<QFontDialog*>(objName);
     QFont ft;
     ft.fromString(fontName);
     if (diag )
@@ -419,7 +439,7 @@ QString TaoFileActionEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_add_file \"%1\", \"%2\", %3\n")
+    QString cmd = QString("test_add_file \"%1\", \"%2\", %3")
                   .arg(objName).arg(fileName).arg(delay);
     return cmd;
 }
@@ -453,7 +473,7 @@ void TaoFileActionEvent::simulateNow(QWidget *w)
 //  Runs immediatly the action associated with this event.
 // ----------------------------------------------------------------------------
 {
-    QFileDialog* diag = w->findChild<QFileDialog*>(objName);
+    QFileDialog* diag = w->window()->findChild<QFileDialog*>(objName);
     if (diag )
     {
         diag->setVisible(false);
@@ -474,7 +494,7 @@ QString TaoDialogActionEvent::toTaoCmd()
 //  Return a command line for Tao.
 // ----------------------------------------------------------------------------
 {
-    QString cmd = QString("test_dialog_action \"%1\", \"%2\", %3\n")
+    QString cmd = QString("test_add_close_dialog \"%1\", %2, %3")
                   .arg(objName).arg(result).arg(delay);
     return cmd;
 }
@@ -508,80 +528,10 @@ void TaoDialogActionEvent::simulateNow(QWidget *w)
 //  Runs immediatly the action associated with this event.
 // ----------------------------------------------------------------------------
 {
-    QDialog* diag = w->findChild<QDialog*>(objName);
+    QDialog* diag = w->window()->findChild<QDialog*>(objName);
 
     if (diag)
         diag->done(result);
  }
 
 
-// ****************************************************************************
-//   TaoCheckEvent Class
-// NOT YET USED nor finished
-// ****************************************************************************
-
-QDataStream &TaoCheckEvent::serializeData(QDataStream &out)
-// ----------------------------------------------------------------------------
-//  Serialize event specific data.
-// ----------------------------------------------------------------------------
-{
-    out << number;
-    out << image;
-    return out;
-}
-
-QDataStream & TaoCheckEvent::unserializeData(QDataStream &in,
-                                             quint32)
-// ----------------------------------------------------------------------------
-//  Unserialize event specific data.
-// ----------------------------------------------------------------------------
-{
-    in >> number;
-    image = new QImage;
-    in >> *image;
-    return in;
-}
-
-
-void TaoCheckEvent::simulateNow(QWidget */*w*/)
-// ----------------------------------------------------------------------------
-//  Perform a check againts the reference view.
-// ----------------------------------------------------------------------------
-{
-    /*
-    QGLWidget * widget = (QGLWidget *)w;
-    QString testName = taoTester::tester()->currentTest()->name;
-    QFileInfo refFile(QString("image:%1/%1_%2.png").arg(testName).arg(number));
-    QImage ref(refFile.canonicalFilePath());
-    QImage shot = widget->grabFrameBuffer(true);
-
-    shot.save(QString("%1/%2_played_%3.png")
-              .arg(refFile.canonicalPath()).arg(testName).arg(number), "PNG");
-
-    QString diffFilename = QString("%1/%2_diff_%3.png").arg(refFile.canonicalPath())
-                           .arg(testName).arg(number);
-    double resDiff = taoTester::tester()->currentTest()->diff(ref, shot, diffFilename);
-
-    std::cerr << +testName <<  "\t Intermediate check " << number ;
-    bool inError = resDiff > taoTester::tester()->currentTest()->threshold;
-    if (inError)
-    {
-        std::cerr<< " fails. Diff is " << resDiff << "%\n";
-        taoTester::tester()->currentTest()->nbChkPtKO++;
-    }
-    else
-        std::cerr<< " succeeds. Diff is " << resDiff << "%\n";
-    taoTester::tester()->currentTest()->log(number, !inError, resDiff);
-    */
-}
-
-
-QString TaoCheckEvent::toTaoCmd()
-// ----------------------------------------------------------------------------
-//  Return a command line for Tao.
-// ----------------------------------------------------------------------------
-{
-    QString cmd = QString("test_add_check %1, %2\n").arg(number).arg(delay);
-    // TEST add image save.
-    return cmd;
-}

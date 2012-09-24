@@ -24,6 +24,7 @@
 
 #include "main.h"
 #include "event_handler.h"
+#include "tao/module_api.h"
 
 #include <QGLWidget>
 #include <QMainWindow>
@@ -44,11 +45,12 @@ struct synchroBasic : QObject
     virtual void stop()=0;
 
     TaoEventHandler * tao_event_handler;
-    QGLWidget *widget;
-    QMainWindow * win ;
-    QSize         winSize;
+    QGLWidget       * widget;
+    QMainWindow     * win ;
+    QSize             winSize;
 
-    static synchroBasic* base;
+    static synchroBasic   * base;
+    const static Tao::ModuleApi * tao;
 };
 
 struct EventCapture : public synchroBasic
@@ -76,6 +78,9 @@ public slots:
 
 public:
     QTime      startTime;
+
+private:
+    bool oldMouseTracking;
 
 };
 
