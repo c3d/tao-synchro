@@ -312,14 +312,8 @@ void TaoActionEvent::simulateNow(QWidget *w)
 // ----------------------------------------------------------------------------
 {
     QAction* act = w->window()->findChild<QAction*>(action_name);
-    std::cerr << "TaoActionEvent::simulateNow " << action_name.toStdString() <<std::endl;
     if (act)
-    {
-        std::cerr << "\tActivation\n";
         act->trigger();//activate(QAction::Trigger);
-    }
-    else
-        std::cerr << "\tNOT FOUND\n";
 }
 
 

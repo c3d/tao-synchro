@@ -33,13 +33,18 @@ HEADERS += \
     tao_control_event.h \
     event_handler.h \
     doc/tao_synchro.doxy.h \
-    taosynchro_eventhandler.h
+    taosynchro_eventhandler.h \
+    startclient.h
 
 SOURCES += \
     tao_synchro.cpp \
     event_capture.cpp \
     tao_control_event.cpp \
-    taosynchro_eventhandler.cpp
+    taosynchro_eventhandler.cpp \
+    startclient.cpp
 
 LICENSE_FILES = tao_synchro.taokey.notsigned
 include(../licenses.pri)
+
+FORMS += \
+    startclient.ui

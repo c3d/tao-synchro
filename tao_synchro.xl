@@ -16,7 +16,8 @@ module_description "fr",
 toolbar_synch ->
     menu "toolbar:synchro", "synchro"
     menu_item "toolbar:test > start", "start master", { start_capture }
-    menu_item "toolbar:test > play",  "start client", { start_client "192.168.40.62"}
+    menu_item "toolbar:test > play",  "start client", { start_client "127.0.0.1"}
+    //menu_item "toolbar:test > play",  "start client", { start_client "192.168.40.62"}
     menu_item "toolbar:test > stop",  "stop",         { stop_capture }
 
 
