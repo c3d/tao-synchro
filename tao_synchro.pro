@@ -24,7 +24,8 @@ QT += core gui opengl network
 OTHER_FILES += \
     tao_synchro.xl \
     tao_synchro.tbl \
-    tao_synchro.taokey.notsigned
+    tao_synchro.taokey.notsigned \
+    doc/Doxyfile.in
 
 HEADERS += \
     tao_synchro.h \
@@ -48,3 +49,8 @@ include(../licenses.pri)
 
 FORMS += \
     startclient.ui
+
+QMAKE_SUBSTITUTES = doc/Doxyfile.in
+DOXYFILE = doc/Doxyfile
+DOXYLANG = en,fr
+include(../modules_doc.pri)

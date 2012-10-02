@@ -27,11 +27,10 @@
 
 
 XL::Tree_p startCapture(XL::Tree_p self);
-XL::Tree_p stopCapture(XL::Tree_p self);
 
 XL::Tree_p startClient(XL::Tree_p self, text serverName = "127.0.0.1",
                        int serverPort = 65300);
-XL::Tree_p stopClient(XL::Tree_p self);
+XL::Tree_p stopSynchro(XL::Tree_p self);
 
 
 #endif // TAOSYNCHRO_H

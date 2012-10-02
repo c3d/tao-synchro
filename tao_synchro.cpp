@@ -46,7 +46,7 @@ Tree_p startCapture(Tree_p )
 }
 
 
-Tree_p stopCapture(Tree_p )
+Tree_p stopSynchro(Tree_p )
 // ----------------------------------------------------------------------------
 //   Stop recording events
 // ----------------------------------------------------------------------------
@@ -76,16 +76,6 @@ Tree_p startClient(Tree_p , text serverName, int serverPort)
     currentClient->startClient();
     return XL::xl_true;
 
-}
-
-
-Tree_p stopClient(Tree_p )
-// ----------------------------------------------------------------------------
-//   Stop playing a sequence of events
-// ----------------------------------------------------------------------------
-{
-    synchroBasic::base->stop();
-    return XL::xl_true;
 }
 
 
