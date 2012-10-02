@@ -1,3 +1,24 @@
+// ****************************************************************************
+//  tao_synchro.cpp						    Tao project
+// ****************************************************************************
+//
+//   File Description:
+//
+//     XL interface for synchronization feature.
+//     GUI to request master IP address and port.
+//
+//
+//
+//
+//
+//
+//
+// ****************************************************************************
+// This software is property of Taodyne SAS - Confidential
+// Ce logiciel est la propriété de Taodyne SAS - Confidentiel
+//  (C) 2011 Catherine Burvelle <cathy@taodyne.com>
+//  (C) 2011 Taodyne SAS
+// ****************************************************************************
 #ifndef STARTCLIENT_H
 #define STARTCLIENT_H
 
