@@ -158,17 +158,18 @@ QDataStream & TaoKeyEvent::unserializeData(QDataStream &in,
 //  Unserialize event specific data.
 // ----------------------------------------------------------------------------
 {
+    quint32               keyData = 0, modifiersData = 0;
+    quint16               countData = 0;
     Qt::Key               key;
     Qt::KeyboardModifiers modifiers;
     QString               k_text;
     bool                  auto_repeat;
     ushort                count;
 
-    in >> (quint32&) key;
-    in >> (quint32&) modifiers;
-    in >> k_text;
-    in >> auto_repeat;
-    in >> (quint16&) count;
+    in >> keyData >> modifiersData >> k_text >> auto_repeat >> countData;
+    key = (Qt::Key) keyData;
+    modifiers = (Qt::KeyboardModifiers) modifiersData;
+    count = (ushort) countData;
 
     event = new QKeyEvent ((QEvent::Type)e_type, key, modifiers, k_text,
                            auto_repeat, count);
@@ -238,15 +239,14 @@ QDataStream & TaoMouseEvent::unserializeData(QDataStream &in,
 // ----------------------------------------------------------------------------
 {
     int px = 0, py = 0, pz = 0;
-    qint32 ux = 0, uy = 0;
+    qint32 ux = 0, uy = 0, buttonData = 0, buttonsData = 0, modifiersData = 0;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
-    in >> ux;
-    in >> uy;
-    in >> (quint32&) button;
-    in >> (quint32&) buttons;
-    in >> (quint32&) modifiers;
+    in >> ux >> uy >> buttonData >> buttonsData >> modifiersData;
+    button = (Qt::MouseButton) buttonData;
+    buttons = (Qt::MouseButtons) buttonsData;
+    modifiers = (Qt::KeyboardModifiers) modifiers;
     synchroBasic::base->project(ux, uy, 0, &px, &py, &pz);
     QPoint pos(px, py);
     event = new QMouseEvent ((QEvent::Type)e_type, pos, button,
@@ -312,14 +312,8 @@ void TaoActionEvent::simulateNow(QWidget *w)
 // ----------------------------------------------------------------------------
 {
     QAction* act = w->window()->findChild<QAction*>(action_name);
-    std::cerr << "TaoActionEvent::simulateNow " << action_name.toStdString() <<std::endl;
     if (act)
-    {
-        std::cerr << "\tActivation\n";
         act->trigger();//activate(QAction::Trigger);
-    }
-    else
-        std::cerr << "\tNOT FOUND\n";
 }
 
 
