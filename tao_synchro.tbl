@@ -21,15 +21,27 @@
 //  (C) 2010 Taodyne SAS
 // ***************************************************************************
 
-
+/*
+NAME("to_file")
+NAME("to_network")
+NAME("to_file_and_network")
+NAME("from_file")
+NAME("from_network")
+*/
 PREFIX(StartCapture,  tree,  "start_capture", , return startCapture(self);,
        GROUP(capture)
        SYNOPSIS("Start to record ")
        DESCRIPTION("Start to record events in order to replay them "))
-PREFIX(StopSynchro,  tree,  "stop_synchro", , return stopSynchro(self);,
+PREFIX(StopCapture,  tree,  "stop_capture", , return stopCapture(self);,
        GROUP(capture)
        SYNOPSIS("Stop the recording or the playing of tests.")
        DESCRIPTION("Stop the recording or the playing of tests."))
+/*
+PREFIX(Play,  tree,  "play", , return play(self);,
+       GROUP(capture)
+       SYNOPSIS("Replay test ")
+       DESCRIPTION("Replay the current test events. "))
+*/
 
 PREFIX(StartClient,  tree,  "start_client",
        PARM(name, text, "Server name")
