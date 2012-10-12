@@ -1,13 +1,11 @@
-#ifndef TAOSYNCHRO_H
-#define TAOSYNCHRO_H
 // ****************************************************************************
-//  tao_synchro.h						    Tao project
+//  tao_synchro.cpp						    Tao project
 // ****************************************************************************
 //
 //   File Description:
 //
 //     XL interface for synchronization feature.
-//
+//     GUI to request master IP address and port.
 //
 //
 //
@@ -21,16 +19,28 @@
 //  (C) 2011 Catherine Burvelle <cathy@taodyne.com>
 //  (C) 2011 Taodyne SAS
 // ****************************************************************************
+#ifndef STARTCLIENT_H
+#define STARTCLIENT_H
 
-#include "main.h"
-#include "event_capture.h"
+#include <QDialog>
+#include <QString>
 
+namespace Ui {
+class StartClient;
+}
 
-XL::Tree_p startCapture(XL::Tree_p self);
+class StartClient : public QDialog
+{
+    Q_OBJECT
 
-XL::Tree_p startClient(XL::Tree_p self, text serverName = "127.0.0.1",
-                       int serverPort = 65300);
-XL::Tree_p stopSynchro(XL::Tree_p self);
+public:
+    explicit StartClient(QString name, int port, QWidget *parent = 0);
+    ~StartClient();
+    QString hostname();
+    int port();
 
+private:
+    Ui::StartClient *ui;
+};
 
-#endif // TAOSYNCHRO_H
+#endif // STARTCLIENT_H
