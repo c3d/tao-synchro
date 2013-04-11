@@ -87,7 +87,10 @@ int module_init(const Tao::ModuleApi *api, const Tao::ModuleInfo *)
     XL_INIT_TRACES();
 
     synchroBasic::tao = api;
-    return no_error;
+//    if (api->checkImpressOrLicense("TaoSynchro 1.0"))
+        return no_error;
+
+//    return error_invalid_license;
 }
 
 
