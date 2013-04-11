@@ -44,6 +44,9 @@ SOURCES += \
     taosynchro_eventhandler.cpp \
     startclient.cpp
 
+LICENSE_FILES = tao_synchro.taokey.notsigned
+include(../licenses.pri)
+
 FORMS += \
     startclient.ui
 
