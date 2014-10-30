@@ -5,7 +5,7 @@
 // ****************************************************************************
 //
 //   File Description:
-//     Events used to control tao presentations.
+//     Events used to control tao3D.
 //     Used to save and replay a test or
 //     to send over the network and control a remote session.
 //

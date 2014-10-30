@@ -1,7 +1,7 @@
 /**
  * @~english
  * @taomoduledescription{TaoSynchro, Tao presentation synchronization utility}
- * <tt>import TaoSynchro</tt> - Utility to synchronize multiple instances of Tao presentations.@n
+ * <tt>import TaoSynchro</tt> - Utility to synchronize multiple instances of Tao3D.@n
  *
  * Used to play multiple instances of a presentation (in different location), all
  * controled by a master one.
@@ -9,8 +9,8 @@
  * @endtaomoduledescription{TaoSynchro}
  *
  * @~french
- * @taomoduledescription{TaoSynchro, Utilitaire de synchronisation pour Tao presentations}
- * <tt>import TaoSynchro</tt> - Utilitaire pour synchroniser plusieurs instance de Tao Presentations.@n
+ * @taomoduledescription{TaoSynchro, Utilitaire de synchronisation pour Tao3D}
+ * <tt>import TaoSynchro</tt> - Utilitaire pour synchroniser plusieurs instance de Tao3D.@n
  *
  * Utilisé pour faire une même présentation basée sur plusieurs instances de Tao presentation.
  *
